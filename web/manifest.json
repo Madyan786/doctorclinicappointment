@@ -1,0 +1,39 @@
+{
+    "name": "Doctor Clinic - Book Appointments",
+    "short_name": "Doctor Clinic",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#355CE4",
+    "theme_color": "#355CE4",
+    "description": "Book appointments with trusted doctors. Find specialists, view profiles, read reviews and schedule appointments online.",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "categories": ["health", "medical", "lifestyle"],
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [],
+    "lang": "en",
+    "scope": "/"
+}

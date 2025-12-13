@@ -1,0 +1,124 @@
+{
+  "project_info": {
+    "project_number": "1012277955689",
+    "project_id": "quick-doctor-e357f",
+    "storage_bucket": "quick-doctor-e357f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012277955689:android:1ebc275772d2cc355a66f8",
+        "android_client_info": {
+          "package_name": "com.chats.chats"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKJOFU2D-XuTmI0higI4kr_xKh_dUkDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012277955689:android:f3c980fcdabc3b9e5a66f8",
+        "android_client_info": {
+          "package_name": "com.doctorclinic.doctorclinic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKJOFU2D-XuTmI0higI4kr_xKh_dUkDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012277955689:android:82aef5fcd1440a905a66f8",
+        "android_client_info": {
+          "package_name": "com.example.quick_doctor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKJOFU2D-XuTmI0higI4kr_xKh_dUkDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012277955689:android:d471815962ae5f305a66f8",
+        "android_client_info": {
+          "package_name": "com.example.tezrabta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKJOFU2D-XuTmI0higI4kr_xKh_dUkDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012277955689:android:7035ab201c9ab7135a66f8",
+        "android_client_info": {
+          "package_name": "com.wtml.whotriedmylock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKJOFU2D-XuTmI0higI4kr_xKh_dUkDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012277955689:android:1dbc97447115ccb05a66f8",
+        "android_client_info": {
+          "package_name": "hc.hidecalculator.hidecalculator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKJOFU2D-XuTmI0higI4kr_xKh_dUkDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
