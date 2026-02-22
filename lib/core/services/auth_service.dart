@@ -127,28 +127,13 @@ class AuthService extends GetxController {
       );
       
       if (userCredential.user != null) {
-        if (userCredential.user!.emailVerified) {
-          developer.log('✅ Login successful - Email verified', name: 'AuthService');
-          Get.snackbar(
-            'Success',
-            'Welcome back!',
-            snackPosition: SnackPosition.TOP,
-          );
-          return true;
-        } else {
-          developer.log('⚠️ Email not verified', name: 'AuthService');
-          Get.snackbar(
-            'Email Not Verified',
-            'Please verify your email first. Check your inbox.',
-            snackPosition: SnackPosition.TOP,
-            duration: const Duration(seconds: 4),
-          );
-          // Resend verification email
-          await userCredential.user!.sendEmailVerification();
-          developer.log('📧 Verification email resent', name: 'AuthService');
-          await _auth.signOut();
-          return false;
-        }
+        developer.log('✅ Login successful', name: 'AuthService');
+        Get.snackbar(
+          'Success',
+          'Welcome back!',
+          snackPosition: SnackPosition.TOP,
+        );
+        return true;
       }
       return false;
     } on FirebaseAuthException catch (e) {

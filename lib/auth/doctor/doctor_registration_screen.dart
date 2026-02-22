@@ -792,7 +792,7 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Text(
-                      'Your profile will be reviewed by our admin team. Once approved, you will be able to receive appointments.',
+                      'After registration, you can login immediately and start receiving appointments.',
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Colors.amber.shade700,
@@ -1210,8 +1210,8 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
         'rating': 0.0,
         'totalReviews': 0,
         'isAvailable': true,
-        'isVerified': false,
-        'verificationStatus': 'pending',
+        'isVerified': true,
+        'verificationStatus': 'approved',
         'rejectionReason': '',
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -1238,13 +1238,13 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
               ),
               SizedBox(height: 20.h),
               Text(
-                'Registration Submitted!',
+                'Registration Successful!',
                 style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 12.h),
               Text(
-                'Your profile is under review. We will notify you once approved by admin.',
+                'Your account has been created. You can now login and start receiving appointments!',
                 style: TextStyle(fontSize: 14.sp, color: AppColors.grey),
                 textAlign: TextAlign.center,
               ),
