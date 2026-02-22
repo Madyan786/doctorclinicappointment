@@ -49,22 +49,10 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
       final doctor = await doctorService.getDoctorByEmail(_emailController.text.trim());
 
       if (doctor != null) {
-        // Check verification status
-        if (doctor.verificationStatus == VerificationStatus.pending) {
-          await _authService.logout();
-          _showPendingDialog();
-        } else if (doctor.verificationStatus == VerificationStatus.rejected) {
-          await _authService.logout();
-          _showRejectedDialog(doctor.rejectionReason);
-        } else if (doctor.isVerified) {
-          // Save doctor login state
-          _authService.setUserType(UserType.doctor);
-          GetStorage().write('doctor_id', doctor.id);
-          Get.offAll(() => DoctorMainNavigation(doctor: doctor));
-        } else {
-          await _authService.logout();
-          Get.snackbar('Error', 'Your account is not verified yet');
-        }
+        // Direct login - no admin verification needed
+        _authService.setUserType(UserType.doctor);
+        GetStorage().write('doctor_id', doctor.id);
+        Get.offAll(() => DoctorMainNavigation(doctor: doctor));
       } else {
         await _authService.logout();
         Get.snackbar('Error', 'No doctor account found with this email');

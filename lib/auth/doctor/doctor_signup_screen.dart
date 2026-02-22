@@ -113,7 +113,7 @@ class _DoctorSignupScreenState extends State<DoctorSignupScreen> {
         password: _passwordController.text.trim(),
       );
 
-      // Create doctor profile in Firestore
+      // Create doctor profile in Firestore (auto-approved, no admin verification needed)
       final doctor = DoctorModel(
         id: '',
         name: _nameController.text.trim(),
@@ -134,6 +134,8 @@ class _DoctorSignupScreenState extends State<DoctorSignupScreen> {
         hospitalAddress: _hospitalAddressController.text.trim(),
         qualifications: _qualificationsController.text.split(',').map((e) => e.trim()).toList(),
         createdAt: DateTime.now(),
+        isVerified: true,
+        verificationStatus: VerificationStatus.approved,
       );
 
       await _doctorService.createDoctor(doctor);
