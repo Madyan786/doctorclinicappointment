@@ -1,6 +1,5 @@
 import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get/get.dart';
 import '../models/doctor_model.dart';
 
@@ -8,9 +7,7 @@ class DoctorService extends GetxController {
   static DoctorService get to => Get.find<DoctorService>();
   
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final String _collection = 'doctors';
-  final String _imageFolder = 'doctor_images';
 
   final RxList<DoctorModel> doctors = <DoctorModel>[].obs;
   final RxList<DoctorModel> filteredDoctors = <DoctorModel>[].obs;
@@ -25,32 +22,8 @@ class DoctorService extends GetxController {
     fetchDoctors();
   }
 
-  // Get doctor image URL from Firebase Storage
-  Future<String> getDoctorImageUrl(String doctorId) async {
-    try {
-      // Try different file extensions
-      final extensions = ['jpg', 'jpeg', 'png', 'webp'];
-      
-      for (final ext in extensions) {
-        try {
-          final ref = _storage.ref().child('$_imageFolder/$doctorId.$ext');
-          final url = await ref.getDownloadURL();
-          developer.log('✅ Found image for doctor $doctorId: $ext', name: 'DoctorService');
-          return url;
-        } catch (_) {
-          // Try next extension
-          continue;
-        }
-      }
-      
-      // If no image found with doctorId, return empty
-      developer.log('⚠️ No image found for doctor $doctorId', name: 'DoctorService');
-      return '';
-    } catch (e) {
-      developer.log('❌ Error getting doctor image: $e', name: 'DoctorService');
-      return '';
-    }
-  }
+  // Note: Doctor image URLs are now stored directly in Firestore (from Cloudinary)
+  // No need to fetch from storage - the profileImage field contains the full URL
 
   // Fetch all doctors from Firebase
   Future<void> fetchDoctors() async {
@@ -67,17 +40,7 @@ class DoctorService extends GetxController {
           .map((doc) => DoctorModel.fromFirestore(doc))
           .toList();
 
-      // Fetch images from Storage for doctors without imageUrl
-      for (int i = 0; i < doctorList.length; i++) {
-        final doctor = doctorList[i];
-        if (doctor.profileImage.isEmpty || !doctor.profileImage.startsWith('http')) {
-          final imageUrl = await getDoctorImageUrl(doctor.id);
-          if (imageUrl.isNotEmpty) {
-            doctorList[i] = doctor.copyWith(profileImage: imageUrl);
-          }
-        }
-      }
-
+      // Note: Image URLs now stored directly in Firestore (from Cloudinary)
       doctors.value = doctorList;
 
       // Extract unique specialties

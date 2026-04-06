@@ -12,6 +12,9 @@
 9. [API Reference (Firestore Operations)](#api-reference)
 10. [Deployment](#deployment)
 11. [Mobile App Connection](#mobile-app-connection)
+12. [Firestore Security Rules](#firestore-security-rules)
+13. [Firestore Indexes Required](#firestore-indexes-required)
+14. [Sample Test Data](#sample-test-data)
 
 ---
 
@@ -36,7 +39,8 @@ Any changes made in the admin panel reflect **instantly** in the mobile app (rea
 |---|---|
 | **React 18** | Frontend framework |
 | **React Router v6** | Client-side routing |
-| **Firebase v10** | Backend (Firestore, Auth, Storage) |
+| **Firebase v10** | Backend (Firestore & Auth) |
+| **Cloudinary** | Image storage & CDN (FREE 25GB) |
 | **Lucide React** | Modern icon library |
 | **CSS3** | Custom styling (no external UI library) |
 
@@ -54,7 +58,8 @@ web-admin/
 │   ├── App.js                     # Main app with routing & auth
 │   ├── firebase.js                # Firebase configuration
 │   ├── components/
-│   │   └── Layout.js              # Sidebar + Topbar + Layout wrapper
+│   │   ├── Layout.js              # Sidebar + Topbar + Layout wrapper
+│   │   └── CloudinaryUpload.js    # Cloudinary image upload widgets
 │   └── pages/
 │       ├── Login.js               # Admin login page
 │       ├── Dashboard.js           # Dashboard with stats & overview
@@ -85,12 +90,15 @@ web-admin/
 Create a `.env` file in `web-admin/` folder:
 
 ```env
+# Firebase Configuration
 REACT_APP_FIREBASE_API_KEY=AIzaSy...your-key
 REACT_APP_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 REACT_APP_FIREBASE_PROJECT_ID=your-project-id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=123456789
 REACT_APP_FIREBASE_APP_ID=1:123456789:web:abc123
+
+# Note: Firebase Storage NOT used - Images stored on Cloudinary
+# Cloudinary config handled in Flutter app, not web admin
 ```
 
 ### Step 3: Create Admin Account in Firebase
@@ -175,9 +183,9 @@ doctors/{doctorId}
   "licenseNumber": "PMC-12345",         // String - Medical license number
   "rejectionReason": "",                 // String - Reason if rejected
 
-  // Documents
-  "licenseDocument": "https://...",      // String - License document image URL
-  "degreeImages": ["https://..."],       // Array<String> - Degree certificate URLs
+  // Documents (stored on Cloudinary)
+  "licenseDocument": "https://res.cloudinary.com/...",  // String - Cloudinary license URL
+  "degreeImages": ["https://res.cloudinary.com/..."],   // Array<String> - Cloudinary degree URLs
 
   // System
   "createdAt": Timestamp,               // Timestamp - Registration date
@@ -206,7 +214,7 @@ appointments/{appointmentId}
   // Doctor Info (denormalized)
   "doctorId": "abc123",                  // String - Reference to doctor
   "doctorName": "Dr. Ahmad Khan",        // String - Doctor name
-  "doctorImage": "https://...",          // String - Doctor image URL
+  "doctorImage": "https://res.cloudinary.com/...",  // String - Cloudinary doctor image
   "doctorSpecialty": "Cardiologist",     // String - Doctor specialty
 
   // Patient Info
@@ -224,7 +232,7 @@ appointments/{appointmentId}
   "status": "pending",                   // String - Current status
   "cancelReason": "",                    // String (optional) - If cancelled
   "rejectionReason": "",                 // String (optional) - If rejected by admin
-  "paymentSlipUrl": "https://...",      // String (optional) - Payment proof image
+  "paymentSlipUrl": "https://res.cloudinary.com/...",  // String (optional) - Cloudinary payment slip
 
   // System
   "createdAt": Timestamp,               // Timestamp - Booking date
@@ -252,7 +260,7 @@ users/{userId}  // userId = Firebase Auth UID
   "name": "Ali Hassan",                  // String - Full name
   "email": "ali.hassan@email.com",       // String - Email
   "phone": "+92-300-9876543",            // String - Phone
-  "profileImage": "https://...",         // String - Profile image URL
+  "profileImage": "https://res.cloudinary.com/...",  // String - Cloudinary profile image
   "gender": "male",                      // String (optional)
   "dateOfBirth": Timestamp,              // Timestamp (optional)
   "address": "456 Street, Karachi",      // String (optional)
@@ -274,7 +282,7 @@ reviews/{reviewId}
   "doctorName": "Dr. Ahmad Khan",        // String - Doctor name
   "patientId": "user123",               // String - Patient Auth UID
   "patientName": "Ali Hassan",          // String - Patient name
-  "patientImage": "https://...",        // String - Patient image URL
+  "patientImage": "https://res.cloudinary.com/...",  // String - Cloudinary patient image
   "rating": 4.5,                         // Number - Rating (1-5)
   "comment": "Great doctor...",          // String - Review text
   "isApproved": false,                   // Boolean - Admin approval status
@@ -545,9 +553,10 @@ Make sure to set these environment variables in your hosting platform:
 - `REACT_APP_FIREBASE_API_KEY`
 - `REACT_APP_FIREBASE_AUTH_DOMAIN`
 - `REACT_APP_FIREBASE_PROJECT_ID`
-- `REACT_APP_FIREBASE_STORAGE_BUCKET`
 - `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`
 - `REACT_APP_FIREBASE_APP_ID`
+
+**Note:** Firebase Storage bucket NOT needed - images stored on Cloudinary
 
 ---
 
@@ -561,7 +570,7 @@ The web admin panel connects to the **exact same Firebase project** as the Flutt
 | Web Admin Panel | React.js |
 | Database | Cloud Firestore (shared) |
 | Authentication | Firebase Auth (shared) |
-| File Storage | Firebase Storage (shared) |
+| **Image Storage** | **Cloudinary (FREE - 25GB storage)** |
 
 ### Real-time Sync
 - Admin approves a doctor → Mobile app shows doctor as verified instantly
@@ -668,7 +677,7 @@ Fields:
   "phone": "+92-300-1234567",
   "specialty": "Cardiologist",
   "about": "Renowned cardiologist with 15+ years of experience.",
-  "profileImage": "https://randomuser.me/api/portraits/men/32.jpg",
+  "profileImage": "https://res.cloudinary.com/dz0ug5gey/image/upload/...",  // Cloudinary URL
   "experienceYears": 15,
   "rating": 4.9,
   "totalReviews": 0,
@@ -684,9 +693,126 @@ Fields:
   "verificationStatus": "approved",
   "licenseNumber": "PMC-12345",
   "rejectionReason": "",
-  "licenseDocument": "",
-  "degreeImages": [],
-  "createdAt": "<timestamp>"
+  "licenseDocument": "https://res.cloudinary.com/dz0ug5gey/...",  // Cloudinary license URL
+  "degreeImages": ["https://res.cloudinary.com/dz0ug5gey/..."],  // Cloudinary degree URLs
+  "createdAt": "<timestamp>",
+  "appId": "doctorclinic"
+}
+```
+
+**Note:** All image URLs (profileImage, licenseDocument, degreeImages, paymentSlips) are stored as **Cloudinary URLs**. Both the Flutter mobile app and the web admin panel upload images directly to Cloudinary using the Upload Widget (cloud: `dz0ug5gey`, preset: `doctor_clinic_preset`).
+
+---
+
+## 12. Firestore Security Rules
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Doctors - Anyone can read, only admin can write
+    match /doctors/{doctorId} {
+      allow read: if true;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Appointments - Users read/write own, admin reads/writes all
+    match /appointments/{appointmentId} {
+      allow read: if request.auth != null &&
+        (resource.data.patientId == request.auth.uid ||
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin');
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+        (resource.data.patientId == request.auth.uid ||
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // Users - Own data only
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Reviews - Anyone can read, authenticated can create, admin can manage
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Admins - Only own document readable
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if false; // Manual only via Firebase Console
+    }
+  }
+}
+```
+
+---
+
+## 13. Firestore Indexes Required
+
+Create these composite indexes in Firebase Console → Firestore → Indexes:
+
+1. **appointments** collection:
+   - `patientId` (Ascending) + `appointmentDate` (Descending)
+   - `doctorId` (Ascending) + `appointmentDate` (Descending)
+   - `status` (Ascending) + `appointmentDate` (Descending)
+
+2. **doctors** collection:
+   - `verificationStatus` (Ascending) + `createdAt` (Descending)
+   - `specialty` (Ascending) + `rating` (Descending)
+
+3. **reviews** collection:
+   - `doctorId` (Ascending) + `createdAt` (Descending)
+   - `isApproved` (Ascending) + `createdAt` (Descending)
+
+---
+
+## 14. Sample Test Data
+
+### Add Admin (Firebase Console)
+```
+Collection: admins
+Document ID: <your-firebase-auth-uid>
+Fields:
+  name: "Admin"
+  email: "admin@doctorclinic.com"
+  role: "admin"
+  createdAt: <server timestamp>
+```
+
+### Add Sample Doctor
+```json
+{
+  "name": "Dr. Ahmad Khan",
+  "email": "ahmad.khan@clinic.com",
+  "phone": "+92-300-1234567",
+  "specialty": "Cardiologist",
+  "about": "Renowned cardiologist with 15+ years of experience.",
+  "profileImage": "https://res.cloudinary.com/dz0ug5gey/image/upload/...",
+  "experienceYears": 15,
+  "rating": 4.9,
+  "totalReviews": 0,
+  "consultationFee": 2500,
+  "isAvailable": true,
+  "availableDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+  "startTime": "09:00",
+  "endTime": "17:00",
+  "hospitalName": "City Medical Center",
+  "hospitalAddress": "123 Main Boulevard, Gulberg III, Lahore",
+  "qualifications": ["MBBS - KEMU", "MD - Cardiology", "Fellowship - USA"],
+  "isVerified": true,
+  "verificationStatus": "approved",
+  "licenseNumber": "PMC-12345",
+  "rejectionReason": "",
+  "licenseDocument": "https://res.cloudinary.com/dz0ug5gey/...",
+  "degreeImages": ["https://res.cloudinary.com/dz0ug5gey/..."],
+  "createdAt": "<timestamp>",
+  "appId": "doctorclinic"
 }
 ```
 
@@ -694,4 +820,4 @@ Fields:
 
 **End of Documentation**
 
-*Doctor Clinic Admin Panel v1.0 - React + Firebase*
+*Doctor Clinic Admin Panel v1.0 - React + Firebase + Cloudinary*

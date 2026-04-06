@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:developer' as developer;
@@ -51,7 +50,7 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
   final _picker = ImagePicker();
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
-  final _storage = FirebaseStorage.instance;
+  late final CloudinaryService _cloudinary;
 
   final List<String> _specialties = [
     'General Physician', 'Cardiologist', 'Dermatologist', 'Neurologist',
@@ -792,7 +791,7 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Text(
-                      'After registration, you can login immediately and start receiving appointments.',
+                      'Your profile will be reviewed by our admin team. Once approved, you will be able to receive appointments.',
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Colors.amber.shade700,
@@ -1113,7 +1112,22 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
       imageQuality: 85,
     );
     if (image != null) {
-      setState(() => _profileImage = File(image.path));
+      // Validate image
+      final file = File(image.path);
+      final validation = await _validateImage(file, maxSizeMB: 2);
+      
+      if (!validation['valid']) {
+        Get.snackbar(
+          'Invalid Image',
+          validation['message'],
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+      
+      setState(() => _profileImage = file);
     }
   }
 
@@ -1125,7 +1139,22 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
       imageQuality: 90,
     );
     if (image != null) {
-      setState(() => _licenseImage = File(image.path));
+      // Validate image
+      final file = File(image.path);
+      final validation = await _validateImage(file, maxSizeMB: 5);
+      
+      if (!validation['valid']) {
+        Get.snackbar(
+          'Invalid Image',
+          validation['message'],
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+      
+      setState(() => _licenseImage = file);
     }
   }
 
@@ -1137,7 +1166,61 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
       imageQuality: 90,
     );
     if (image != null) {
-      setState(() => _degreeImages.add(File(image.path)));
+      // Validate image
+      final file = File(image.path);
+      final validation = await _validateImage(file, maxSizeMB: 5);
+      
+      if (!validation['valid']) {
+        Get.snackbar(
+          'Invalid Image',
+          validation['message'],
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+      
+      setState(() => _degreeImages.add(file));
+    }
+  }
+
+  // Image validation
+  Future<Map<String, dynamic>> _validateImage(File imageFile, {required int maxSizeMB}) async {
+    try {
+      // Check if file exists
+      if (!await imageFile.exists()) {
+        return {'valid': false, 'message': 'Image file not found'};
+      }
+
+      // Check file extension
+      final extension = imageFile.path.split('.').last.toLowerCase();
+      if (!['jpg', 'jpeg', 'png'].contains(extension)) {
+        return {'valid': false, 'message': 'Only JPG, JPEG, and PNG images are allowed'};
+      }
+
+      // Check file size
+      final bytes = await imageFile.length();
+      final sizeMB = bytes / (1024 * 1024);
+      
+      if (sizeMB > maxSizeMB) {
+        return {
+          'valid': false,
+          'message': 'Image size must be less than ${maxSizeMB}MB. Current size: ${sizeMB.toStringAsFixed(1)}MB'
+        };
+      }
+
+      // Check if it's a valid image
+      try {
+        final decodedImage = await decodeImageFromList(await imageFile.readAsBytes());
+        decodedImage.dispose();
+      } catch (e) {
+        return {'valid': false, 'message': 'Invalid or corrupted image file'};
+      }
+
+      return {'valid': true, 'message': 'Valid image'};
+    } catch (e) {
+      return {'valid': false, 'message': 'Error validating image: $e'};
     }
   }
 
@@ -1165,28 +1248,30 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
       );
 
       final userId = credential.user!.uid;
+      _cloudinary = Get.find<CloudinaryService>();
 
-      // 2. Upload profile image
+      // 2. Upload profile image to Cloudinary
       String profileImageUrl = '';
       if (_profileImage != null) {
-        final profileRef = _storage.ref().child('doctor_images/$userId/profile.jpg');
-        await profileRef.putFile(_profileImage!);
-        profileImageUrl = await profileRef.getDownloadURL();
+        profileImageUrl = await _cloudinary.uploadImage(
+          _profileImage!,
+          folder: 'doctor_profiles',
+          publicId: userId,
+        );
       }
 
-      // 3. Upload license image
-      final licenseRef = _storage.ref().child('doctor_documents/$userId/license.jpg');
-      await licenseRef.putFile(_licenseImage!);
-      final licenseUrl = await licenseRef.getDownloadURL();
+      // 3. Upload license image to Cloudinary
+      final licenseUrl = await _cloudinary.uploadImage(
+        _licenseImage!,
+        folder: 'doctor_licenses',
+        publicId: '${userId}_license',
+      );
 
-      // 4. Upload degree images
-      List<String> degreeUrls = [];
-      for (int i = 0; i < _degreeImages.length; i++) {
-        final degreeRef = _storage.ref().child('doctor_documents/$userId/degree_$i.jpg');
-        await degreeRef.putFile(_degreeImages[i]);
-        final url = await degreeRef.getDownloadURL();
-        degreeUrls.add(url);
-      }
+      // 4. Upload degree images to Cloudinary
+      final degreeUrls = await _cloudinary.uploadMultipleImages(
+        _degreeImages,
+        folder: 'doctor_degrees',
+      );
 
       // 5. Create doctor document
       await _firestore.collection('doctors').doc(userId).set({
@@ -1210,14 +1295,11 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
         'rating': 0.0,
         'totalReviews': 0,
         'isAvailable': true,
-        'isVerified': true,
-        'verificationStatus': 'approved',
+        'isVerified': false,
+        'verificationStatus': 'pending',
         'rejectionReason': '',
         'createdAt': FieldValue.serverTimestamp(),
       });
-
-      // 6. Send verification email
-      await credential.user!.sendEmailVerification();
 
       developer.log('✅ Doctor registration successful', name: 'DoctorRegistration');
 
@@ -1238,13 +1320,13 @@ class _DoctorRegistrationScreenState extends State<DoctorRegistrationScreen> {
               ),
               SizedBox(height: 20.h),
               Text(
-                'Registration Successful!',
+                'Registration Submitted!',
                 style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 12.h),
               Text(
-                'Your account has been created. You can now login and start receiving appointments!',
+                'Your profile is under review. We will notify you once approved by admin.',
                 style: TextStyle(fontSize: 14.sp, color: AppColors.grey),
                 textAlign: TextAlign.center,
               ),

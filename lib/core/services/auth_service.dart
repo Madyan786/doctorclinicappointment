@@ -90,15 +90,11 @@ class AuthService extends GetxController {
       
       developer.log('✅ User created successfully', name: 'AuthService');
       
-      // Send email verification
-      await userCredential.user?.sendEmailVerification();
-      developer.log('📧 Verification email sent to: $email', name: 'AuthService');
-      
       Get.snackbar(
         'Success',
-        'Verification email sent! Please check your inbox.',
+        'Account created successfully! You can now login.',
         snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 3),
       );
       
     } on FirebaseAuthException catch (e) {

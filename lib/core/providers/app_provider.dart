@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:developer' as developer;
 import 'dart:io';
@@ -12,10 +11,10 @@ import '../models/review_model.dart';
 import '../services/local_db_service.dart';
 
 /// Main App Provider - Central State Management with Local Caching
+/// Note: Image uploads now handled by CloudinaryService
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final LocalDbService _localDb = LocalDbService();
   final ImagePicker _picker = ImagePicker();
 
@@ -433,37 +432,26 @@ class AppProvider extends ChangeNotifier {
     return null;
   }
 
+  // ============== IMAGE UPLOADS (NOW USE CloudinaryService) ==============
+  // These methods are deprecated - use CloudinaryService instead
+  // Example: Get.find<CloudinaryService>().uploadImage(file, folder: 'doctor_profiles')
+  
+  @Deprecated('Use CloudinaryService.uploadImage() instead')
   Future<String?> uploadDoctorImage(File imageFile, String doctorId) async {
-    try {
-      final ref = _storage.ref().child('doctor_images/$doctorId/profile.jpg');
-      await ref.putFile(imageFile);
-      return await ref.getDownloadURL();
-    } catch (e) {
-      developer.log('❌ Error uploading image: $e', name: 'AppProvider');
-      return null;
-    }
+    developer.log('⚠️ DEPRECATED: Use CloudinaryService instead', name: 'AppProvider');
+    return null;
   }
 
+  @Deprecated('Use CloudinaryService.uploadMultipleImages() instead')
   Future<String?> uploadDegreeImage(File imageFile, String doctorId, int index) async {
-    try {
-      final ref = _storage.ref().child('doctor_documents/$doctorId/degree_$index.jpg');
-      await ref.putFile(imageFile);
-      return await ref.getDownloadURL();
-    } catch (e) {
-      developer.log('❌ Error uploading degree: $e', name: 'AppProvider');
-      return null;
-    }
+    developer.log('⚠️ DEPRECATED: Use CloudinaryService instead', name: 'AppProvider');
+    return null;
   }
 
+  @Deprecated('Use CloudinaryService.uploadImage() instead')
   Future<String?> uploadLicenseImage(File imageFile, String doctorId) async {
-    try {
-      final ref = _storage.ref().child('doctor_documents/$doctorId/license.jpg');
-      await ref.putFile(imageFile);
-      return await ref.getDownloadURL();
-    } catch (e) {
-      developer.log('❌ Error uploading license: $e', name: 'AppProvider');
-      return null;
-    }
+    developer.log('⚠️ DEPRECATED: Use CloudinaryService instead', name: 'AppProvider');
+    return null;
   }
 
   // ============== REFRESH ALL ==============

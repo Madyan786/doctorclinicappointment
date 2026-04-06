@@ -1,5 +1,6 @@
 export 'auth_service.dart';
 export 'settings_controller.dart';
+export 'cloudinary_service.dart';
 export 'doctor_service.dart';
 export 'appointment_service.dart';
 export 'review_service.dart';

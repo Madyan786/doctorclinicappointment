@@ -33,6 +33,7 @@ void main() async {
   // Initialize GetX Services
   Get.put(AuthService());
   Get.put(SettingsController());
+  Get.put(CloudinaryService());
   Get.put(DoctorService());
   Get.put(AppointmentService());
   Get.put(ReviewService());
@@ -75,7 +76,7 @@ class MyApp extends StatelessWidget {
     }
     
     // Check if patient is logged in
-    if (authService.isLoggedIn && authService.isEmailVerified) {
+    if (authService.isLoggedIn && storedUserType == UserType.patient) {
       developer.log('➡️ Navigating to MainNavigation', name: 'Main');
       return const MainNavigation();
     }

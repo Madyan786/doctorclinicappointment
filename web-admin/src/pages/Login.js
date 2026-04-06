@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { Stethoscope, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -18,14 +18,44 @@ export default function Login() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const adminDoc = await getDoc(doc(db, 'admins', userCredential.user.uid));
+      const uid = userCredential.user.uid;
 
-      if (!adminDoc.exists()) {
-        await auth.signOut();
-        setError('Access denied. You are not an admin.');
+      // 1. Check by UID
+      const adminDoc = await getDoc(doc(db, 'admins', uid));
+      if (adminDoc.exists()) {
+        // Admin found by UID - proceed
         setLoading(false);
         return;
       }
+
+      // 2. Check by email
+      const emailQuery = await getDocs(
+        query(collection(db, 'admins'), where('email', '==', email.toLowerCase().trim()))
+      );
+      if (!emailQuery.empty) {
+        // Admin found by email - proceed
+        setLoading(false);
+        return;
+      }
+
+      // 3. If admins collection is completely empty, auto-create first admin
+      const allAdmins = await getDocs(collection(db, 'admins'));
+      if (allAdmins.empty) {
+        await setDoc(doc(db, 'admins', uid), {
+          name: userCredential.user.displayName || 'Admin',
+          email: email.toLowerCase().trim(),
+          role: 'superadmin',
+          createdAt: new Date(),
+        });
+        console.log('First admin account created automatically');
+        setLoading(false);
+        return;
+      }
+
+      // Not an admin
+      await auth.signOut();
+      setError('Access denied. You are not an admin.');
+      setLoading(false);
     } catch (err) {
       console.error('Login error:', err);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
