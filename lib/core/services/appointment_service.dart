@@ -2,19 +2,18 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get/get.dart';
 import '../models/appointment_model.dart';
 import '../models/doctor_model.dart';
 import 'doctor_service.dart';
 import 'notification_service.dart';
+import 'cloudinary_service.dart';
 
 class AppointmentService extends GetxController {
   static AppointmentService get to => Get.find<AppointmentService>();
   
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final String _collection = 'appointments';
 
   final RxList<AppointmentModel> allAppointments = <AppointmentModel>[].obs;
@@ -49,20 +48,8 @@ class AppointmentService extends GetxController {
           .map((doc) => AppointmentModel.fromFirestore(doc))
           .toList();
 
-      // Fetch doctor images for appointments with missing images
-      try {
-        final doctorService = Get.find<DoctorService>();
-        for (int i = 0; i < appointments.length; i++) {
-          if (appointments[i].doctorImage.isEmpty) {
-            final imageUrl = await doctorService.getDoctorImageUrl(appointments[i].doctorId);
-            if (imageUrl.isNotEmpty) {
-              appointments[i] = appointments[i].copyWith(doctorImage: imageUrl);
-            }
-          }
-        }
-      } catch (e) {
-        developer.log('Could not fetch some doctor images: $e', name: 'AppointmentService');
-      }
+      // Note: Doctor images now stored directly in Firestore (from Cloudinary)
+      // No need to fetch separately
 
       allAppointments.value = appointments;
       _categorizeAppointments();
@@ -96,14 +83,15 @@ class AppointmentService extends GetxController {
         .toList();
   }
 
-  // Upload payment slip to Firebase Storage
+  // Upload payment slip to Cloudinary
   Future<String?> uploadPaymentSlip(File imageFile, String doctorId) async {
     try {
-      final String fileName = 'payment_slips/${currentUserId}_${doctorId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = _storage.ref().child(fileName);
-      
-      await ref.putFile(imageFile);
-      final downloadUrl = await ref.getDownloadURL();
+      final cloudinary = Get.find<CloudinaryService>();
+      final downloadUrl = await cloudinary.uploadImage(
+        imageFile,
+        folder: 'payment_slips',
+        publicId: '${currentUserId}_${doctorId}_${DateTime.now().millisecondsSinceEpoch}',
+      );
       
       developer.log('✅ Payment slip uploaded: $downloadUrl', name: 'AppointmentService');
       return downloadUrl;
@@ -146,16 +134,8 @@ class AppointmentService extends GetxController {
         return false;
       }
 
-      // Get doctor image - use profileImage or fetch from storage
-      String doctorImageUrl = doctor.profileImage;
-      if (doctorImageUrl.isEmpty) {
-        try {
-          final doctorService = Get.find<DoctorService>();
-          doctorImageUrl = await doctorService.getDoctorImageUrl(doctor.id);
-        } catch (e) {
-          developer.log('Could not fetch doctor image: $e', name: 'AppointmentService');
-        }
-      }
+      // Doctor image URL from Firestore (Cloudinary)
+      final doctorImageUrl = doctor.profileImage;
 
       final appointment = AppointmentModel(
         id: '',

@@ -6,6 +6,7 @@ import {
   Search, Plus, Eye, Edit, Trash2, Check, X, Filter,
   Stethoscope, Star, MapPin, Clock, Phone, Mail, Shield
 } from 'lucide-react';
+import { CloudinaryUploadSingle, CloudinaryUploadMultiple } from '../components/CloudinaryUpload';
 
 const SPECIALTIES = [
   'Cardiologist', 'Dermatologist', 'Neurologist', 'Pediatrician', 'Dentist',
@@ -377,14 +378,31 @@ export default function Doctors() {
             </div>
 
             <div className="form-row">
-              <div className="form-group">
-                <label>Profile Image URL</label>
-                <input value={formData.profileImage} onChange={e => setFormData({...formData, profileImage: e.target.value})} placeholder="https://..." />
-              </div>
+              <CloudinaryUploadSingle
+                label="Profile Image"
+                value={formData.profileImage}
+                onChange={(url) => setFormData({...formData, profileImage: url})}
+                folder="doctors/profiles"
+              />
               <div className="form-group">
                 <label>License Number</label>
                 <input value={formData.licenseNumber} onChange={e => setFormData({...formData, licenseNumber: e.target.value})} placeholder="PMC-12345" />
               </div>
+            </div>
+
+            <div className="form-row">
+              <CloudinaryUploadSingle
+                label="License Document"
+                value={formData.licenseDocument}
+                onChange={(url) => setFormData({...formData, licenseDocument: url})}
+                folder="doctors/licenses"
+              />
+              <CloudinaryUploadMultiple
+                label="Degree Certificates"
+                values={formData.degreeImages}
+                onChange={(urls) => setFormData({...formData, degreeImages: urls})}
+                folder="doctors/degrees"
+              />
             </div>
 
             <div className="form-row">
