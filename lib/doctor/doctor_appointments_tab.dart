@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:developer' as developer;
 import 'package:doctorclinic/core/core.dart';
 
 class DoctorAppointmentsTab extends StatefulWidget {
@@ -564,15 +565,71 @@ class _DoctorAppointmentsTabState extends State<DoctorAppointmentsTab> with Sing
   }
 
   Future<void> _updateStatus(String id, String status) async {
-    await _firestore.collection('appointments').doc(id).update({'status': status});
-    Get.snackbar('Success', 'Appointment marked as $status');
+    try {
+      await _firestore.collection('appointments').doc(id).update({'status': status});
+      
+      // Send notification to patient
+      final doc = await _firestore.collection('appointments').doc(id).get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        final doctorName = data['doctorName'] ?? 'Doctor';
+        
+        try {
+          final notificationService = Get.find<NotificationService>();
+          String title, body;
+          
+          if (status == 'completed') {
+            title = '✅ Appointment Completed';
+            body = 'Your appointment with Dr. $doctorName has been marked as completed. Thank you!';
+          } else if (status == 'cancelled') {
+            title = '❌ Appointment Cancelled';
+            body = 'Your appointment with Dr. $doctorName has been cancelled.';
+          } else {
+            title = '📅 Appointment Updated';
+            body = 'Your appointment status has been updated to $status';
+          }
+          
+          await notificationService.showInstantNotification(
+            title: title,
+            body: body,
+            payload: id,
+          );
+        } catch (e) {
+          developer.log('⚠️ Could not send notification: $e', name: 'DoctorAppointments');
+        }
+      }
+      
+      Get.snackbar('Success', 'Appointment marked as $status');
+    } catch (e) {
+      developer.log('❌ Error updating status: $e', name: 'DoctorAppointments');
+      Get.snackbar('Error', 'Failed to update appointment status');
+    }
   }
 
   Future<void> _acceptAppointment(String id) async {
     try {
+      // Show loading
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+      
       final appointmentService = Get.find<AppointmentService>();
-      await appointmentService.acceptAppointment(id);
+      final success = await appointmentService.acceptAppointment(id);
+      
+      if (Get.isDialogOpen ?? false) Get.back();
+      
+      if (success) {
+        Get.snackbar(
+          '✅ Success',
+          'Appointment accepted! Patient has been notified.',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
     } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      developer.log('❌ Error accepting appointment: $e', name: 'DoctorAppointments');
       Get.snackbar('Error', 'Failed to accept appointment');
     }
   }
@@ -696,11 +753,31 @@ class _DoctorAppointmentsTabState extends State<DoctorAppointmentsTab> with Sing
                 Get.snackbar('Error', 'Please provide a reason');
                 return;
               }
-              Get.back();
+              
+              // Show loading
+              Get.dialog(
+                const Center(child: CircularProgressIndicator()),
+                barrierDismissible: false,
+              );
+              
               try {
+                Get.back(); // Close reason dialog
                 final appointmentService = Get.find<AppointmentService>();
-                await appointmentService.rejectAppointment(id, reasonController.text.trim());
+                final success = await appointmentService.rejectAppointment(id, reasonController.text.trim());
+                
+                if (Get.isDialogOpen ?? false) Get.back(); // Close loading
+                
+                if (success) {
+                  Get.snackbar(
+                    '❌ Rejected',
+                    'Appointment rejected. Patient has been notified.',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
               } catch (e) {
+                if (Get.isDialogOpen ?? false) Get.back();
+                developer.log('❌ Error rejecting appointment: $e', name: 'DoctorAppointments');
                 Get.snackbar('Error', 'Failed to reject appointment');
               }
             },
