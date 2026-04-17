@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:doctorclinic/core/core.dart';
 import 'package:doctorclinic/auth/login_screen.dart';
 import 'package:doctorclinic/auth/doctor/doctor_login_screen.dart';
-import 'package:doctorclinic/admin/admin_login_screen.dart';
 
 class UserTypeSelectionScreen extends StatelessWidget {
   const UserTypeSelectionScreen({super.key});
