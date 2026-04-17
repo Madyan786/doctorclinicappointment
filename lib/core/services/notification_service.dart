@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:get/get.dart';
@@ -23,6 +22,10 @@ class NotificationService extends GetxController {
   // Notification IDs
   static const int _24hourReminderId = 1000;
   static const int _1hourReminderId = 2000;
+  
+  // Permission status cache
+  bool _permissionGranted = false;
+  bool _permissionChecked = false;
   
   @override
   void onInit() {
@@ -92,20 +95,31 @@ class NotificationService extends GetxController {
   
   /// Request notification permission (Android 13+)
   Future<bool> requestPermission() async {
+    // Return cached result if already checked
+    if (_permissionChecked && _permissionGranted) {
+      return true;
+    }
+    
     final status = await Permission.notification.request();
+    
+    _permissionChecked = true;
+    _permissionGranted = status.isGranted;
     
     if (status.isGranted) {
       developer.log('✅ Notification permission granted', name: 'NotificationService');
       return true;
     } else {
       developer.log('❌ Notification permission denied', name: 'NotificationService');
-      Get.snackbar(
-        'Permission Required',
-        'Please enable notifications to receive appointment reminders',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
+      // Only show snackbar on first denial
+      if (!_permissionChecked) {
+        Get.snackbar(
+          'Permission Required',
+          'Please enable notifications to receive appointment reminders',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
       return false;
     }
   }
@@ -248,40 +262,47 @@ class NotificationService extends GetxController {
     required String body,
     String? payload,
   }) async {
-    final hasPermission = await requestPermission();
-    if (!hasPermission) return;
-    
-    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      icon: '@mipmap/ic_launcher',
-    );
-    
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    final NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-    
-    await _notificationsPlugin.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      details,
-      payload: payload,
-    );
-    
-    developer.log('✅ Instant notification shown', name: 'NotificationService');
+    try {
+      final hasPermission = await requestPermission();
+      if (!hasPermission) {
+        developer.log('⚠️ Notification permission not granted, skipping', name: 'NotificationService');
+        return;
+      }
+      
+      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        icon: '@mipmap/ic_launcher',
+      );
+      
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      
+      final NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+      
+      await _notificationsPlugin.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title,
+        body,
+        details,
+        payload: payload,
+      );
+      
+      developer.log('✅ Instant notification shown: $title', name: 'NotificationService');
+    } catch (e) {
+      developer.log('❌ Error showing notification: $e', name: 'NotificationService');
+    }
   }
   
   /// Show appointment booked notification

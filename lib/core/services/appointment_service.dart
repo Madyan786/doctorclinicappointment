@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../models/appointment_model.dart';
 import '../models/doctor_model.dart';
-import 'doctor_service.dart';
 import 'notification_service.dart';
 import 'cloudinary_service.dart';
 
@@ -160,9 +160,11 @@ class AppointmentService extends GetxController {
       // Create appointment with ID for notifications
       final bookedAppointment = appointment.copyWith(id: docRef.id);
       
-      // Show appropriate notification based on payment slip
+      // NOTIFICATIONS - Send to BOTH patient and doctor
       try {
         final notificationService = Get.find<NotificationService>();
+        
+        // 1. Notify PATIENT
         if (paymentSlipUrl != null) {
           await notificationService.showInstantNotification(
             title: '📝 Appointment Request Sent',
@@ -173,6 +175,15 @@ class AppointmentService extends GetxController {
           await notificationService.scheduleAppointmentReminder(bookedAppointment);
           await notificationService.showAppointmentBookedNotification(bookedAppointment);
         }
+        
+        // 2. Notify DOCTOR about new appointment request
+        await notificationService.showInstantNotification(
+          title: '🔔 New Appointment Request',
+          body: '${user.displayName ?? 'A patient'} has requested an appointment for ${DateFormat('MMM dd, yyyy').format(date)} at $timeSlot. Please review and accept/reject.',
+          payload: docRef.id,
+        );
+        
+        developer.log('✅ Notifications sent to patient and doctor', name: 'AppointmentService');
       } catch (e) {
         developer.log('⚠️ Could not schedule notifications: $e', name: 'AppointmentService');
       }
@@ -377,5 +388,41 @@ class AppointmentService extends GetxController {
         .map((snapshot) => snapshot.docs
             .map((doc) => AppointmentModel.fromFirestore(doc))
             .toList());
+  }
+
+  // Stream for doctor appointments (real-time)
+  Stream<List<AppointmentModel>> streamDoctorAppointments(String doctorId) {
+    return _firestore
+        .collection(_collection)
+        .where('doctorId', isEqualTo: doctorId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => AppointmentModel.fromFirestore(doc))
+            .toList());
+  }
+
+  // Fetch appointments for a specific doctor
+  Future<List<AppointmentModel>> fetchDoctorAppointments(String doctorId) async {
+    try {
+      isLoading.value = true;
+      developer.log('📥 Fetching doctor appointments...', name: 'AppointmentService');
+
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('doctorId', isEqualTo: doctorId)
+          .get();
+
+      List<AppointmentModel> appointments = snapshot.docs
+          .map((doc) => AppointmentModel.fromFirestore(doc))
+          .toList();
+
+      developer.log('✅ Fetched ${appointments.length} appointments for doctor', name: 'AppointmentService');
+      return appointments;
+    } catch (e) {
+      developer.log('❌ Error fetching doctor appointments: $e', name: 'AppointmentService');
+      return [];
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

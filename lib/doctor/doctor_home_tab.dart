@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer' as developer;
 import 'package:doctorclinic/core/core.dart';
 
 class DoctorHomeTab extends StatefulWidget {
@@ -450,10 +451,64 @@ class _DoctorHomeTabState extends State<DoctorHomeTab> {
   }
 
   Future<void> _updateStatus(String appointmentId, String status) async {
-    await _firestore.collection('appointments').doc(appointmentId).update({
-      'status': status,
-    });
-    Get.snackbar('Success', 'Appointment marked as $status');
+    try {
+      // Show loading
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+      
+      await _firestore.collection('appointments').doc(appointmentId).update({
+        'status': status,
+      });
+      
+      // Send notification to patient
+      final doc = await _firestore.collection('appointments').doc(appointmentId).get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        final doctorName = data['doctorName'] ?? 'Doctor';
+        final patientName = data['patientName'] ?? 'Patient';
+        
+        try {
+          final notificationService = Get.find<NotificationService>();
+          String title, body;
+          
+          if (status == 'completed') {
+            title = '✅ Appointment Completed';
+            body = 'Your appointment with Dr. $doctorName has been completed. Thank you!';
+          } else if (status == 'cancelled') {
+            title = '❌ Appointment Cancelled';
+            body = 'Your appointment with Dr. $doctorName has been cancelled.';
+          } else {
+            title = '📅 Appointment Updated';
+            body = 'Your appointment status has been updated to $status';
+          }
+          
+          await notificationService.showInstantNotification(
+            title: title,
+            body: body,
+            payload: appointmentId,
+          );
+          
+          developer.log('✅ Notification sent to $patientName for status: $status', name: 'DoctorHomeTab');
+        } catch (e) {
+          developer.log('⚠️ Could not send notification: $e', name: 'DoctorHomeTab');
+        }
+      }
+      
+      if (Get.isDialogOpen ?? false) Get.back();
+      
+      Get.snackbar(
+        'Success',
+        'Appointment marked as $status. Patient has been notified.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      developer.log('❌ Error updating status: $e', name: 'DoctorHomeTab');
+      Get.snackbar('Error', 'Failed to update appointment status');
+    }
   }
 
   Widget _buildRecentReviews(bool isDark) {

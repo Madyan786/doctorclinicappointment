@@ -241,7 +241,8 @@ class _AdminAppointmentsTabState extends State<AdminAppointmentsTab> {
 
   Widget _buildAppointmentCard(AppointmentModel appointment, bool isDark) {
     final statusColor = _getStatusColor(appointment.status);
-    final dateFormat = DateFormat('MMM dd, yyyy');
+    // Date format for display (used in UI)
+    // final dateFormat = DateFormat('MMM dd, yyyy');
     
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),

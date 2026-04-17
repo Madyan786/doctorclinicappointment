@@ -21,11 +21,10 @@ void main() async {
   developer.log('🚀 Initializing GetStorage...', name: 'Main');
   await GetStorage.init();
   developer.log('✅ GetStorage initialized successfully', name: 'Main');
-  
+
   developer.log('🚀 Initializing Firebase...', name: 'Main');
   await Firebase.initializeApp();
   developer.log('✅ Firebase initialized successfully', name: 'Main');
-  
   developer.log('🚀 Initializing Alarm Manager...', name: 'Main');
   await AndroidAlarmManager.initialize();
   developer.log('✅ Alarm Manager initialized successfully', name: 'Main');
